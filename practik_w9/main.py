@@ -1,9 +1,9 @@
 import numpy as np
-from sklearn.linear_model import LinearRegression, Lasso
+from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from matplotlib import pyplot as plt
-from sklearn.datasets import make_regression
+from sklearn.datasets import make_regression, fetch_california_housing
 import pandas as pd
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
@@ -137,3 +137,149 @@ zeroed_coefficients = np.sum(np.isclose(lasso.coef_, 0, atol=1e-5))
 print(f'R2 LinearRegression на тесті: {r2_lr:.4f}')
 print(f'R2 Lasso (alpha=0.1) на тесті: {r2_lasso:.4f}')
 print(f'Кількість коефіцієнтів, які Lasso занулила: {zeroed_coefficients}')
+
+# завдання 4
+
+lr.fit(X_train, y_train)
+r2_lr = r2_score(y_test, lr.predict(X_test))
+non_zero_lr = np.sum(~np.isclose(lr.coef_, 0, atol=1e-5))
+
+ridge = Ridge(alpha=1.0)
+ridge.fit(X_train, y_train)
+r2_ridge = r2_score(y_test, ridge.predict(X_test))
+non_zero_ridge = np.sum(~np.isclose(ridge.coef_, 0, atol=1e-5))
+
+results = pd.DataFrame({
+    'Модель': ['LinearRegression', 'Ridge (alpha=1.0)'],
+    'Тест R2': [round(r2_lr, 4), round(r2_ridge, 4)],
+    'Кількість ненульових коеф.': [non_zero_lr, non_zero_ridge]
+})
+
+print(results)
+
+# -- домашня --
+# завдання 1
+
+california = fetch_california_housing(as_frame=True)
+
+X = california.frame[['MedInc']]
+y = california.target
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, 
+    test_size=0.2, 
+    random_state=42
+)
+
+poly = PolynomialFeatures(degree=2, include_bias=False)
+X_train_poly = poly.fit_transform(X_train)
+X_test_poly = poly.transform(X_test)
+
+model = LinearRegression()
+model.fit(X_train_poly, y_train)
+
+y_pred = model.predict(X_test_poly)
+r2_poly = r2_score(y_test, y_pred)
+
+print(f"R² поліноміальної регресії (ступінь 2) на тесті: {r2_poly:.4f}")
+
+# завдання 2
+
+california = fetch_california_housing(as_frame=True)
+X = california.frame[['MedInc']]
+y = california.target
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, 
+    test_size=0.2, 
+    random_state=42
+)
+
+degrees = [1, 2, 3]
+train_r2_list = []
+test_r2_list = []
+
+for degree in degrees:
+    poly = PolynomialFeatures(degree=degree, include_bias=False)
+    X_train_poly = poly.fit_transform(X_train)
+    X_test_poly = poly.transform(X_test)
+    
+    model = LinearRegression()
+    model.fit(X_train_poly, y_train)
+    
+    r2_train = r2_score(y_train, model.predict(X_train_poly))
+    r2_test = r2_score(y_test, model.predict(X_test_poly))
+    
+    train_r2_list.append(round(r2_train, 4))
+    test_r2_list.append(round(r2_test, 4))
+
+results_df = pd.DataFrame({
+    'Ступінь полінома': degrees,
+    'R² поїзд (Train)': train_r2_list,
+    'Тест R²': test_r2_list
+})
+
+print(results_df)
+
+# завдання 3
+
+california = fetch_california_housing(as_frame=True)
+features = ['MedInc', 'HouseAge', 'AveRooms', 'AveBedrms']
+
+X = california.frame[features]
+y = california.target
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, 
+    test_size=0.2, 
+    random_state=42
+)
+
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+r2_lr = r2_score(y_test, lr.predict(X_test))
+zero_lr = np.sum(np.isclose(lr.coef_, 0, atol=1e-5))
+
+lasso = Lasso(alpha=0.1, random_state=42)
+lasso.fit(X_train, y_train)
+r2_lasso = r2_score(y_test, lasso.predict(X_test))
+zero_lasso = np.sum(np.isclose(lasso.coef_, 0, atol=1e-5))
+
+print(f"LinearRegression Тест R²: {r2_lr:.4f}, занулено коефіцієнтів: {zero_lr}")
+print(f"Lasso (alpha=0.1) Тест R²: {r2_lasso:.4f}, занулено коефіцієнтів: {zero_lasso}")
+
+print("\nКоефіцієнти Lasso для кожної ознаки:")
+for feature, coef in zip(features, lasso.coef_):
+    print(f"{feature}: {coef:.4f}")
+
+# завдання 4
+
+california = fetch_california_housing(as_frame=True)
+features = ['MedInc', 'HouseAge', 'AveRooms', 'AveBedrms']
+
+X = california.frame[features]
+y = california.target
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, 
+    test_size=0.2, 
+    random_state=42
+)
+
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+r2_lr = r2_score(y_test, lr.predict(X_test))
+non_zero_lr = np.sum(~np.isclose(lr.coef_, 0, atol=1e-5))
+
+ridge = Ridge(alpha=1.0)
+ridge.fit(X_train, y_train)
+r2_ridge = r2_score(y_test, ridge.predict(X_test))
+non_zero_ridge = np.sum(~np.isclose(ridge.coef_, 0, atol=1e-5))
+
+results_df = pd.DataFrame({
+    'Модель': ['LinearRegression', 'Ridge (alpha=1.0)'],
+    'Тест R²': [round(r2_lr, 4), round(r2_ridge, 4)],
+    'Кількість ненульових коеф.': [non_zero_lr, non_zero_ridge]
+})
+
+print(results_df)
