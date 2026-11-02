@@ -2,11 +2,13 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, RandomForestRegressor
-from sklearn.metrics import accuracy_score, classification_report, r2_score
+from sklearn.metrics import accuracy_score, classification_report, r2_score, confusion_matrix, precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier, plot_tree, DecisionTreeRegressor
-from sklearn.datasets import fetch_california_housing
+from sklearn.datasets import fetch_california_housing, load_breast_cancer
+from xgboost import XGBRegressor
+from sklearn.linear_model import LogisticRegression
 
 print("-- Дерева рішень та ін. --")
 RANDOM_STATE = 42
@@ -585,3 +587,145 @@ r2_rf = r2_score(y_test, rf_model.predict(X_test))
 
 print(f"DecisionTreeRegressor Test R2: {r2_dt:.4f}")
 print(f"RandomForestRegressor Test R2: {r2_rf:.4f}")
+
+# завдання 3
+
+housing = fetch_california_housing()
+X = housing.data
+y = housing.target
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+xgb_model = XGBRegressor(n_estimators=200, learning_rate=0.1, max_depth=5, random_state=42)
+xgb_model.fit(X_train, y_train)
+
+y_pred_xgb = xgb_model.predict(X_test)
+r2_xgb = r2_score(y_test, y_pred_xgb)
+
+rf_model = RandomForestRegressor(n_estimators=200, random_state=42, n_jobs=-1)
+rf_model.fit(X_train, y_train)
+
+y_pred_rf = rf_model.predict(X_test)
+r2_rf = r2_score(y_test, y_pred_rf)
+
+print(f"XGBoost R2 Score:      {r2_xgb:.5f}")
+print(f"Random Forest R2 Score: {r2_rf:.5f}")
+
+# завдання 4
+
+data = load_breast_cancer()
+X = data.data
+y = data.target
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = LogisticRegression(max_iter=1000, random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+cm = confusion_matrix(y_test, y_pred)
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+
+print("Матриця помилок (Confusion Matrix):")
+print(cm)
+print(f"Accuracy:  {accuracy:.5f}")
+print(f"Precision: {precision:.5f}")
+print(f"Recall:    {recall:.5f}")
+print(f"F1 Score:  {f1:.5f}")
+
+# -- домашня --
+# завдання 1
+
+housing = fetch_california_housing(as_frame=True)
+df = housing.frame
+
+features = ['MedInc', 'HouseAge', 'AveRooms', 'AveBedrms']
+X = df[features]
+y = df['MedHouseVal']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = DecisionTreeRegressor(max_depth=4, random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+r2 = r2_score(y_test, y_pred)
+
+print(f"Decision Tree R2 Score: {r2:.5f}")
+
+# завдання 2
+
+rf_model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+rf_model.fit(X_train, y_train)
+y_pred_rf = rf_model.predict(X_test)
+r2_rf = r2_score(y_test, y_pred_rf)
+
+results_table = pd.DataFrame({
+    'Модель': ['DecisionTreeRegressor', 'RandomForestRegressor'],
+    'R² Score (Test)': [f"{r2:.5f}", f"{r2_rf:.5f}"]
+})
+
+print("\nПорівняння якості передбачень:")
+print(results_table)
+
+# завдання 3
+
+housing = fetch_california_housing(as_frame=True)
+df = housing.frame
+
+features = ['MedInc', 'HouseAge', 'AveRooms', 'AveBedrms']
+X = df[features]
+y = df['MedHouseVal']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+xgb_model = XGBRegressor(n_estimators=200, learning_rate=0.1, max_depth=5, random_state=42)
+xgb_model.fit(X_train, y_train)
+
+y_pred_xgb = xgb_model.predict(X_test)
+r2_xgb = r2_score(y_test, y_pred_xgb)
+
+results_table = pd.DataFrame({
+    'Модель': ['RandomForestRegressor', 'XGBRegressor'],
+    'R² Score (Test)': [f"{r2_rf:.5f}", f"{r2_xgb:.5f}"]
+})
+
+print("\nПорівняння RandomForest та Градієнтного бустингу:")
+print(results_table)
+
+# завдання 4
+
+housing = fetch_california_housing()
+X = housing.data
+y = housing.target
+
+median_price = np.median(y)
+y_class = (y > median_price).astype(int)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y_class, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+model = LogisticRegression(max_iter=1000, random_state=42)
+model.fit(X_train_scaled, y_train)
+
+y_pred = model.predict(X_test_scaled)
+
+cm = confusion_matrix(y_test, y_pred)
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+
+print("Матриця помилок (Confusion Matrix):")
+print(cm)
+print(f"Accuracy:  {accuracy:.5f}")
+print(f"Precision: {precision:.5f}")
+print(f"Recall:    {recall:.5f}")
+print(f"F1 Score:  {f1:.5f}")
