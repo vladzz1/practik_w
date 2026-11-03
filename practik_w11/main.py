@@ -6,6 +6,8 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+import matplotlib.pyplot as plt
+
 #Створення штучного набору даних
 X, y = make_classification(n_samples=1000, n_features=10, n_classes=2, random_state=42)
 
@@ -169,3 +171,146 @@ final_loss = criterion(final_pred, y).item()
 print(f"Фінальна вага (w): {final_w:.4f} (Очікувалось близько {true_w})")
 print(f"Фінальний зсув (b): {final_b:.4f} (Очікувалось близько {true_b})")
 print(f"Фінальна помилка (MSE Loss): {final_loss:.4f}")
+
+# завдання 3
+
+optimizer = optim.SGD(model.parameters(), lr=0.01)
+
+print("Епоха | loss(SGD)")
+print("-" * 16)
+loss_sgd = []
+
+for epoch in range(1, 21):
+    optimizer.zero_grad()
+    
+    outputs = model(X)
+    loss = criterion(outputs, y)
+    
+    loss.backward()
+    
+    optimizer.step()
+
+    loss_sgd.append(loss.item())
+    print(f"{epoch:5d} | {loss.item():.4f}")
+
+# завдання 4
+
+epochs = list(range(1, 21))
+
+plt.figure(figsize=(8, 5))
+plt.plot(epochs, loss_sgd, marker='o', color='crimson', linewidth=2, label='Loss (SGD)')
+
+plt.title('Залежність функції втрат (MSE Loss) від епох навчання', fontsize=12)
+plt.xlabel('Епоха', fontsize=10)
+plt.ylabel('Значення помилки (Loss)', fontsize=10)
+plt.xticks(epochs)
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.legend()
+
+plt.savefig('loss_healthrisk.png', dpi=300, bbox_inches='tight')
+plt.show()
+
+# -- домашня --
+# завдання 1
+
+X, y = make_classification(n_samples=1000, n_features=13, n_classes=2, random_state=42)
+
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+    X, y, 
+    test_size=0.20, 
+    random_state=42, 
+    stratify=y
+)
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train_raw)
+X_test = scaler.transform(X_test_raw)
+
+print(f"Розмірність X_train: {X_train.shape}")
+print(f"Розмірність X_test:  {X_test.shape}")
+
+# завдання 2
+
+X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+
+input_features = X_train_tensor.shape[1]
+
+model = nn.Sequential(
+    nn.Linear(input_features, 16),
+    nn.ReLU(),
+    
+    nn.Linear(16, 8),
+    nn.ReLU(),
+    
+    nn.Linear(8, 1),
+    nn.Sigmoid()
+)
+
+print("--- Архітектура побудованої моделі MLP ---")
+print(model)
+
+# завдання 3
+
+y_train_tensor = torch.tensor(y_train, dtype=torch.float32).unsqueeze(1)
+
+criterion = nn.BCELoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+num_epochs = 30
+
+print(f"{'Епоха':<7} | {'Loss':<10} | {'Accuracy':<10}")
+print("-" * 35)
+loss_history = []
+accuracy_history = []
+
+for epoch in range(1, num_epochs + 1):
+    model.train()
+    
+    optimizer.zero_grad()
+    
+    outputs = model(X_train_tensor)
+    loss = criterion(outputs, y_train_tensor)
+    
+    loss.backward()
+    optimizer.step()
+    
+    predictions = (outputs >= 0.5).float()
+    correct = (predictions == y_train_tensor).sum().item()
+    accuracy = correct / len(y_train_tensor)
+
+    loss_history.append(loss.item())
+    accuracy_history.append(accuracy)
+    print(f"{epoch:<7d} | {loss.item():<10.4f} | {accuracy:<10.4f}")
+
+final_loss = loss.item()
+final_accuracy = accuracy
+
+print("\n" + "="*30)
+print(f"{'Метрика':<15} | {'Значення':<10}")
+print("-"*30)
+print(f"{'Loss':<15} | {final_loss:.4f}")
+print(f"{'Accuracy':<15} | {final_accuracy:.4f}")
+print("="*30)
+
+# завдання 4
+
+epochs = list(range(1, 31))
+
+plt.figure(figsize=(8, 4))
+plt.plot(epochs, loss_history, marker='o', color='teal', linewidth=2, label='Train Loss')
+plt.title('Динаміка функції втрат (Loss) за епохами', fontsize=12)
+plt.xlabel('Епоха', fontsize=10)
+plt.ylabel('Значення BCELoss', fontsize=10)
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.legend()
+plt.savefig('loss_healthrisk_mlp.png', dpi=300, bbox_inches='tight')
+plt.show()
+
+plt.figure(figsize=(8, 4))
+plt.plot(epochs, accuracy_history, marker='s', color='orange', linewidth=2, label='Train Accuracy')
+plt.title('Динаміка метрики точності (Accuracy) за епохами', fontsize=12)
+plt.xlabel('Епоха', fontsize=10)
+plt.ylabel('Точність (Accuracy)', fontsize=10)
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.legend()
+plt.savefig('accuracy_healthrisk_mlp.png', dpi=300, bbox_inches='tight')
+plt.show()
