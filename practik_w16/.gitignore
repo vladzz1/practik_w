@@ -1,1 +1,4 @@
 .ipynb_checkpoints
+.venv
+mnist_test.csv
+mnist_train_small.csv

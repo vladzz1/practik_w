@@ -1,0 +1,9 @@
+.venv
+.ipynb_checkpoints
+annotations
+images
+yolo_dataset
+annotations.tar.gz
+dataset.yaml
+images.tar.gz
+yolov8n.pt
