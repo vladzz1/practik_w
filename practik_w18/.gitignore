@@ -1,2 +1,4 @@
 .venv
 .ipynb_checkpoints
+face_embedder.pth
+svd_model.pkl
